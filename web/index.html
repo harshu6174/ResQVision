@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Damage Analyzer</title>
+<meta name="description" content="Compare before and after satellite images, find damaged buildings and blocked roads, and send inspection teams where they are needed first.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="is-intro">
+
+<!-- Opening: a black curtain with an iris that opens onto the page -->
+<div class="curtain" id="curtain" aria-hidden="true">
+  <div class="curtain-word">ResQVision</div>
+</div>
+
+<header class="bar" id="bar">
+  <a class="brand" href="#" id="brand" aria-label="ResQVision, back to start">
+    <svg class="brand-mark" viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">
+      <circle cx="16" cy="16" r="14" fill="#000"/>
+      <circle cx="21" cy="11" r="6.5" fill="#bfe0ff"/>
+    </svg>
+    <span>ResQVision</span>
+  </a>
+
+  <nav class="tabs" id="tabs" aria-label="Views" hidden>
+    <button class="btn tab" data-tone="line" data-view="compare" type="button">Compare</button>
+    <button class="btn tab" data-tone="line" data-view="map" type="button">Damage map</button>
+    <button class="btn tab" data-tone="line" data-view="list" type="button">Priority list</button>
+    <button class="btn tab" data-tone="line" data-view="route" type="button">Field route</button>
+    <button class="btn tab" data-tone="line" data-view="live" type="button">Satellite map</button>
+    <button class="btn tab" data-tone="line" data-view="why" type="button">Why this rank</button>
+    <button class="btn tab" data-tone="line" data-view="accuracy" type="button">Accuracy</button>
+  </nav>
+
+  <div class="bar-actions">
+    <button class="btn" data-tone="line" id="settingsBtn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings">Settings</button>
+    <button class="btn" data-tone="ink" id="newRunBtn" type="button" hidden>New analysis</button>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ========================= Start ========================= -->
+  <section class="hero" id="home">
+    <div class="hero-copy">
+      <h1>Find the damage.<br>Send teams where it matters first.</h1>
+      <p class="lede">Give it a satellite image from before and one from after. It marks the damaged buildings and blocked roads, ranks them, and hands your team a list with GPS locations and a route.</p>
+
+      <div class="source" role="radiogroup" aria-label="Where the images come from">
+        <button class="source-opt is-on" role="radio" aria-checked="true" data-source="demo" type="button">Demo town</button>
+        <button class="source-opt" role="radio" aria-checked="false" data-source="upload" type="button">My images</button>
+      </div>
+
+      <div class="hero-cta">
+        <button class="btn btn-lg" data-tone="ink" id="runBtn" type="button">
+          <span class="btn-label" id="runLabel">Analyze damage</span>
+        </button>
+        <button class="btn btn-lg" data-tone="sky" id="editFilesBtn" type="button" hidden>Choose files</button>
+      </div>
+      <p class="hint" id="runHint">The demo is a generated town with known damage. It shows the whole workflow in a few seconds.</p>
+      <p class="error" id="runError" role="alert" hidden></p>
+    </div>
+
+    <div class="stage hero-stage">
+      <div class="wipe" id="heroWipe" data-before="assets/demo-before.jpg" data-after="assets/demo-after.jpg" data-intro="true"></div>
+      <div class="scanbar" id="scanbar" aria-hidden="true"><i></i></div>
+    </div>
+  </section>
+
+  <!-- ========================= Results ========================= -->
+  <section class="results" id="results" hidden>
+    <div class="notes" id="notes"></div>
+
+    <div class="figures" id="figures" role="list"></div>
+
+    <div class="view" id="view-compare" role="tabpanel" hidden>
+      <div class="stage stage-wipe"><div class="wipe" id="mainWipe"></div></div>
+      <p class="caption" id="alignCaption"></p>
+    </div>
+
+    <div class="view" id="view-map" role="tabpanel" hidden>
+      <div class="split">
+        <div class="split-main">
+          <div class="stage stage-fit"><img id="overlayImg" alt="After image with damaged buildings colored by severity"></div>
+          <div class="legend">
+            <span><i class="dot d-destroyed"></i>Destroyed</span>
+            <span><i class="dot d-major"></i>Major</span>
+            <span><i class="dot d-minor"></i>Minor</span>
+            <span><i class="dot d-none"></i>No change</span>
+            <span><i class="bar-road"></i>Possible road obstruction</span>
+            <button class="btn btn-sm" data-tone="line" id="heatToggle" type="button" aria-pressed="false">Show change heat</button>
+          </div>
+        </div>
+        <aside class="split-side">
+          <h2>Inspect first</h2>
+          <ol class="mini-list" id="topList"></ol>
+        </aside>
+      </div>
+    </div>
+
+    <div class="view" id="view-list" role="tabpanel" hidden>
+      <div class="toolbar">
+        <div class="chips" id="tierChips" role="group" aria-label="Priority tiers"></div>
+        <div class="downloads" id="downloads"></div>
+      </div>
+      <div class="table-wrap">
+        <table class="table" id="siteTable">
+          <thead><tr>
+            <th>Rank</th><th>Site</th><th>Priority</th><th>Damage</th><th class="num">Index</th><th>Confidence</th><th>GPS</th><th>Near</th><th><span class="sr">Map</span></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="caption">Rank follows the priority index: damage, times the importance of the facility, times how much of the neighborhood is damaged.</p>
+    </div>
+
+    <div class="view" id="view-route" role="tabpanel" hidden>
+      <div class="split split-route">
+        <div class="split-main">
+          <div class="stage stage-fit route-stage">
+            <img id="routeImg" alt="After image with the suggested inspection route drawn on top">
+            <svg id="routeSvg" class="route-svg" aria-hidden="true"></svg>
+          </div>
+        </div>
+        <aside class="split-side panel-ink">
+          <h2>One inspection team</h2>
+          <p class="panel-sub" id="routeSummary"></p>
+          <label class="range-row">
+            <span>Sites in route</span>
+            <input type="range" id="routeK" min="3" max="15" step="1" value="8">
+            <output id="routeKOut">8</output>
+          </label>
+          <ol class="stops" id="stops"></ol>
+          <a class="btn" data-tone="sky" id="routeLink" target="_blank" rel="noopener noreferrer" href="#">Open in Google Maps</a>
+          <p class="panel-note">Most urgent site first, then the nearest next. A quick, explainable order, not a guaranteed shortest tour.</p>
+        </aside>
+      </div>
+    </div>
+
+    <div class="view" id="view-live" role="tabpanel" hidden>
+      <div class="stage stage-map"><iframe id="liveFrame" title="Interactive satellite map of flagged sites" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" loading="lazy"></iframe></div>
+      <p class="caption">The satellite basemap comes from Esri and loads from the internet in your browser. Click a site for its GPS location and a Google Maps link.</p>
+    </div>
+
+    <div class="view" id="view-why" role="tabpanel" hidden>
+      <div class="why-head">
+        <label class="select-wrap">
+          <span class="sr">Choose a site</span>
+          <select id="siteSelect"></select>
+        </label>
+        <p class="why-title" id="whyTitle"></p>
+      </div>
+      <div class="why-body">
+      <div class="crops">
+        <figure class="stage crop"><img id="cropPre" alt="Site before"><figcaption>Before</figcaption></figure>
+        <figure class="stage crop"><img id="cropPost" alt="Site after"><figcaption>After</figcaption></figure>
+        <figure class="stage crop"><img id="cropHeat" alt="Where the site changed"><figcaption>Change</figcaption></figure>
+      </div>
+      <div class="table-wrap evidence">
+        <table class="table" id="evidence"><tbody></tbody></table>
+      </div>
+      </div>
+      <p class="caption">Confidence is a heuristic, based on the distance to the nearest severity threshold and on how well the images aligned. It is not a calibrated probability.</p>
+    </div>
+
+    <div class="view" id="view-accuracy" role="tabpanel" hidden>
+      <div id="accuracyBody"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ========================= Settings popover ========================= -->
+<div class="popover" id="settings" role="dialog" aria-label="Settings" hidden>
+  <h2>Settings</h2>
+  <fieldset>
+    <legend>Severity thresholds</legend>
+    <label class="range-row"><span>Minor from</span><input type="range" id="tMin" min="0.05" max="0.6" step="0.01" value="0.22"><output></output></label>
+    <label class="range-row"><span>Major from</span><input type="range" id="tMaj" min="0.1" max="0.8" step="0.01" value="0.42"><output></output></label>
+    <label class="range-row"><span>Destroyed from</span><input type="range" id="tDes" min="0.3" max="0.95" step="0.01" value="0.68"><output></output></label>
+  </fieldset>
+  <fieldset>
+    <legend>Base camp for the route</legend>
+    <div class="field-pair">
+      <label>Latitude<input type="number" id="baseLat" step="0.000001" value="16.9855"></label>
+      <label>Longitude<input type="number" id="baseLon" step="0.000001" value="82.2500"></label>
+    </div>
+  </fieldset>
+  <p class="panel-note">Changes apply the next time you analyze.</p>
+</div>
+
+<!-- ========================= Upload dialog ========================= -->
+<dialog class="dialog" id="uploadDlg" aria-labelledby="uploadTitle">
+  <form method="dialog" class="dialog-body" id="uploadForm">
+    <h2 id="uploadTitle">Your images</h2>
+    <p class="panel-sub">Both images must show the same area. Footprints, facilities and roads are optional. Without footprints, the area is split into 24 m zones and each zone is scored.</p>
+    <div class="files">
+      <label class="file"><span class="file-name">Before image</span><span class="file-hint">GeoTIFF, PNG or JPG</span><input type="file" id="fPre" accept=".tif,.tiff,.png,.jpg,.jpeg"><span class="file-pick">Choose</span></label>
+      <label class="file"><span class="file-name">After image</span><span class="file-hint">Same area</span><input type="file" id="fPost" accept=".tif,.tiff,.png,.jpg,.jpeg"><span class="file-pick">Choose</span></label>
+      <label class="file"><span class="file-name">Building footprints</span><span class="file-hint">GeoJSON, optional</span><input type="file" id="fFoot" accept=".geojson,.json"><span class="file-pick">Choose</span></label>
+      <label class="file"><span class="file-name">Hospitals and schools</span><span class="file-hint">GeoJSON, optional</span><input type="file" id="fPois" accept=".geojson,.json"><span class="file-pick">Choose</span></label>
+      <label class="file"><span class="file-name">Roads</span><span class="file-hint">GeoJSON, optional</span><input type="file" id="fRoads" accept=".geojson,.json"><span class="file-pick">Choose</span></label>
+    </div>
+    <fieldset>
+      <legend>Area bounds, needed for PNG and JPG because they carry no GPS</legend>
+      <div class="field-quad">
+        <label>West<input type="number" id="bW" step="0.00001" value="82.25000"></label>
+        <label>East<input type="number" id="bE" step="0.00001" value="82.25460"></label>
+        <label>South<input type="number" id="bS" step="0.00001" value="16.98540"></label>
+        <label>North<input type="number" id="bN" step="0.00001" value="16.99000"></label>
+      </div>
+    </fieldset>
+    <div class="dialog-actions">
+      <button class="btn" data-tone="line" value="cancel" type="submit" id="uploadCancel">Cancel</button>
+      <button class="btn" data-tone="ink" value="ok" type="submit" id="uploadOk">Use these images</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+streamlit>=1.30
+opencv-python-headless
+numpy
+pandas
+scipy
+scikit-image
+shapely>=2
+rasterio
+folium
+requests
+pytest
+fastapi>=0.110
+uvicorn[standard]
+python-multipart
+httpx
